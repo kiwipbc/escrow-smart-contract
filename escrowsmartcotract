@@ -1,0 +1,61 @@
+pragma solidity ^0.8.0;
+
+contract Escrow {
+    address payable public buyer;
+    address payable public seller;
+    uint public amount;
+    uint public fees;
+    string public title;
+    uint public startDate;
+    uint public endDate;
+    bool public deposited;
+    bool public released;
+    bool public refunded;
+
+    constructor(address payable _buyer, address payable _seller, uint _amount, uint _fees, string memory _title, uint _startDate, uint _endDate) public {
+        buyer = _buyer;
+        seller = _seller;
+        amount = _amount;
+        fees = _fees;
+        title = _title;
+        startDate = _startDate;
+        endDate = _endDate;
+        deposited = false;
+        released = false;
+        refunded = false;
+    }
+
+    function deposit() public payable {
+        require(msg.sender == buyer);
+        require(address(this).balance == msg.value);
+        deposited = true;
+    }
+
+    function release() public {
+        require(msg.sender == seller);
+        require(deposited);
+        require(!released);
+        require(!refunded);
+        require(address(this).balance == amount);
+        buyer.transfer(amount);
+        released = true;
+    }
+
+    function refund() public {
+        require(msg.sender == buyer);
+        require(deposited);
+        require(!released);
+        require(!refunded);
+        require(address(this).balance == amount + fees);
+        buyer.transfer(amount + fees);
+        refunded = true;
+    }
+
+    function checkDisruption() public view returns (bool) {
+        if (now >= startDate && now <= endDate) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
